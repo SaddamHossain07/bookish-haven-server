@@ -32,6 +32,7 @@ async function run() {
 
         const categoryCollection = client.db('bookishHaven').collection('category')
         const booksCollection = client.db('bookishHaven').collection('books')
+        const borrowCollection = client.db('bookishHaven').collection('borrow')
 
         app.get('/category', async (req, res) => {
             const result = await categoryCollection.find().toArray()
@@ -42,6 +43,33 @@ async function run() {
         // Books api ============================
         app.get('/books', async (req, res) => {
             const result = await booksCollection.find().toArray()
+            res.send(result)
+        })
+
+        app.post('/books', async (req, res) => {
+            const book = req.body
+            const result = await booksCollection.insertOne(book)
+            res.send(result)
+        })
+
+        app.put('/books/:id', async (req, res) => {
+            const id = req.params.id
+            const query = { _id: new ObjectId(id) }
+            const options = { upsert: true }
+            const updatedBook = req.body
+            const book = {
+                $set: {
+                    image: updatedBook.image,
+                    name: updatedBook.name,
+                    quantity: updatedBook.quantity,
+                    author: updatedBook.author,
+                    category_name: updatedBook.category_name,
+                    short_description: updatedBook.short_description,
+                    rating: updatedBook.rating,
+                    content: updatedBook.content
+                }
+            }
+            const result = await booksCollection.updateOne(query, book, options)
             res.send(result)
         })
 
@@ -59,6 +87,18 @@ async function run() {
             res.send(result)
         })
 
+
+        // Borrow Books api ===============================
+        app.get('/borrow', async (req, res) => {
+            const result = await borrowCollection.find().toArray()
+            res.send(result)
+        })
+
+        app.post('/borrow', async (req, res) => {
+            const borrow = req.body
+            const result = await borrowCollection.insertOne(borrow)
+            res.send(result)
+        })
 
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
