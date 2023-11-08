@@ -46,8 +46,6 @@ const verifyToken = async (req, res, next) => {
 }
 
 
-// DB_USER=bookishHaven
-// DB_PASS=16dmSkbS3a8g7CEn
 
 
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
@@ -77,12 +75,13 @@ async function run() {
         app.post('/jwt', async (req, res) => {
             const user = req.body
             const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
-                expiresIn: '1h'
+                expiresIn: '110h'
             })
             res
                 .cookie('token', token, {
                     httpOnly: true,
-                    secure: false
+                    secure: process.env.NODE_ENV === "production" ? true : false,
+                    sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
                 })
                 .send({ success: true })
         })
@@ -90,7 +89,11 @@ async function run() {
         app.post('/logout', async (req, res) => {
             const user = req.body
             console.log('logOut User', user)
-            res.clearCookie('token', { maxAge: 0 }).send({ success: true })
+            res.clearCookie('token', {
+                maxAge: 0,
+                secure: process.env.NODE_ENV === "production" ? true : false,
+                sameSite: process.env.NODE_ENV === "production" ? "none" : "strict"
+            }).send({ success: true })
         })
 
         // category api ========================
@@ -163,7 +166,7 @@ async function run() {
 
 
         // Borrow Books api ===============================
-        app.get('/borrow', async (req, res) => {
+        app.get('/borrow', verifyToken, async (req, res) => {
 
             if (req.query.email !== req.user.email) {
                 return res.status(401).send({ message: 'not authorized' })
