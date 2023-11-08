@@ -166,7 +166,7 @@ async function run() {
 
 
         // Borrow Books api ===============================
-        app.get('/borrow', async (req, res) => {
+        app.get('/borrow', verifyToken, async (req, res) => {
 
             if (req.query.email !== req.user.email) {
                 return res.status(401).send({ message: 'not authorized' })
