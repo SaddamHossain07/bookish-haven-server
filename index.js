@@ -8,6 +8,13 @@ const port = process.env.PORT || 5000
 
 
 // middleware ============================
+// Enable All CORS Requests
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    // other headers...
+    next();
+});
+
 app.use(cors({
     origin: [
         'https://bookishhaven-fdd6d.web.app',
