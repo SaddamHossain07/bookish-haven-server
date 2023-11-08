@@ -1,11 +1,38 @@
 const express = require('express');
 const cors = require('cors');
+const jwt = require('jsonwebtoken')
+const cookieParser = require('cookie-parser')
 require('dotenv').config()
 const app = express()
 const port = process.env.PORT || 5000
 
-app.use(cors())
+
+// middleware ============================
+app.use(cors({
+    origin: ['http://localhost:5173', 'http://localhost:5174'],
+    credentials: true
+}));
 app.use(express.json())
+app.use(cookieParser())
+
+// token verification middleware ================
+const verifyToken = async (req, res, next) => {
+    const token = req.cookies.token
+    console.log('middleware token', token)
+    if (!token) {
+        return res.status(401).send({ message: 'not authorized' })
+    }
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+        if (err) {
+            console.log(err)
+            return res.status(401).send({ message: 'unauthorized' })
+        }
+        console.log('value in the token decoded', decoded)
+        req.user = decoded
+        next()
+
+    })
+}
 
 
 // DB_USER=bookishHaven
@@ -34,6 +61,28 @@ async function run() {
         const booksCollection = client.db('bookishHaven').collection('books')
         const borrowCollection = client.db('bookishHaven').collection('borrow')
 
+
+        // auth api ============================
+        app.post('/jwt', async (req, res) => {
+            const user = req.body
+            const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+                expiresIn: '1h'
+            })
+            res
+                .cookie('token', token, {
+                    httpOnly: true,
+                    secure: false
+                })
+                .send({ success: true })
+        })
+
+        app.post('/logout', async (req, res) => {
+            const user = req.body
+            console.log('logOut User', user)
+            res.clearCookie('token', { maxAge: 0 }).send({ success: true })
+        })
+
+        // category api ========================
         app.get('/category', async (req, res) => {
             const result = await categoryCollection.find().toArray()
             res.send(result)
@@ -73,6 +122,20 @@ async function run() {
             res.send(result)
         })
 
+        app.patch('/books/:id', async (req, res) => {
+            const id = req.params.id
+            const query = { _id: new ObjectId(id) }
+            const book = await booksCollection.findOne(query);
+            const updatedQuantity = book.quantity - 1;
+            const update = {
+                $set: {
+                    quantity: updatedQuantity
+                }
+            }
+            const result = await booksCollection.updateOne(query, update)
+            res.send(result)
+        })
+
         app.get('/books/:id', async (req, res) => {
             const id = req.params.id
             const query = { _id: new ObjectId(id) }
@@ -89,14 +152,37 @@ async function run() {
 
 
         // Borrow Books api ===============================
-        app.get('/borrow', async (req, res) => {
-            const result = await borrowCollection.find().toArray()
+        app.get('/borrow', verifyToken, async (req, res) => {
+
+            if (req.query.email !== req.user.email) {
+                return res.status(401).send({ message: 'not authorized' })
+            }
+
+            let query = {}
+            if (req.query?.email) {
+                query = { email: req.query.email }
+            }
+            const result = await borrowCollection.find(query).toArray()
+            res.send(result)
+        })
+
+        app.get('/borrow/:id', async (req, res) => {
+            const id = req.params.id
+            const query = { _id: new ObjectId(id) }
+            const result = await borrowCollection.findOne(query)
             res.send(result)
         })
 
         app.post('/borrow', async (req, res) => {
             const borrow = req.body
             const result = await borrowCollection.insertOne(borrow)
+            res.send(result)
+        })
+
+        app.delete('/borrow/:id', async (req, res) => {
+            const id = req.params.id
+            const query = { _id: new ObjectId(id) }
+            const result = await borrowCollection.deleteOne(query)
             res.send(result)
         })
 
