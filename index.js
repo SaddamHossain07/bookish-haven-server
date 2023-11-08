@@ -9,7 +9,11 @@ const port = process.env.PORT || 5000
 
 // middleware ============================
 app.use(cors({
-    origin: ['http://localhost:5173', 'http://localhost:5174'],
+    origin: [
+        'https://bookishhaven-fdd6d.web.app',
+        'https://bookishhaven-fdd6d.firebaseapp.com',
+        'http://localhost:5173'
+    ],
     credentials: true
 }));
 app.use(express.json())
