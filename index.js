@@ -189,6 +189,12 @@ async function run() {
 
         app.post('/borrow', async (req, res) => {
             const borrow = req.body
+
+            const bookAlreadyExists = await booksCollection.findOne({ name: borrow.name })
+            if (bookAlreadyExists) {
+                return res.status(400).json({ error: 'This book has already been borrowed!' })
+            }
+
             const result = await borrowCollection.insertOne(borrow)
             res.send(result)
         })
