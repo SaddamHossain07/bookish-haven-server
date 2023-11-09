@@ -188,15 +188,25 @@ async function run() {
         })
 
         app.get('/borrow/:name', async (req, res) => {
-            const name = req.params.name
+            const { name } = req.params;
 
-            const existingBorrowRecord = await borrowCollection.findOne({ name: name });
-            if (existingBorrowRecord) {
-                res.send({ exists: true });
-            } else {
-                res.json({ exists: false });
+            try {
+                // Check if the book's name exists in the borrow collection
+                const existingBorrowRecord = await borrowCollection.findOne({ name: name });
+
+                if (existingBorrowRecord) {
+                    // Book with the same name exists in the borrow collection
+                    return res.json({ exists: true });
+                } else {
+                    // Book with the specified name doesn't exist in the borrow collection
+                    return res.json({ exists: false });
+                }
+            } catch (error) {
+                console.error('Error checking book existence in borrow collection:', error);
+                res.status(500).json({ error: 'Internal server error' });
             }
         });
+
 
         app.post('/borrow', async (req, res) => {
             const borrow = req.body
