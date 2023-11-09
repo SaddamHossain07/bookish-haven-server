@@ -157,17 +157,6 @@ async function run() {
             res.send(result)
         })
 
-        app.get('/books/:name', async (req, res) => {
-            const name = req.params.name
-            const query = { name: name }
-            const result = await booksCollection.findOne(query)
-            if (result) {
-                res.send({ exists: true })
-            } else {
-                res.send({ exists: false })
-            }
-        })
-
         app.get('/books/category/:category_name', async (req, res) => {
             const category_name = req.params.category_name
             const query = { category_name: category_name }
