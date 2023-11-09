@@ -187,27 +187,6 @@ async function run() {
             res.send(result)
         })
 
-        app.get('/borrow/:name', async (req, res) => {
-            const { name } = req.params;
-
-            try {
-                // Check if the book's name exists in the borrow collection
-                const existingBorrowRecord = await borrowCollection.findOne({ name: name });
-
-                if (existingBorrowRecord) {
-                    // Book with the same name exists in the borrow collection
-                    return res.json({ exists: true });
-                } else {
-                    // Book with the specified name doesn't exist in the borrow collection
-                    return res.json({ exists: false });
-                }
-            } catch (error) {
-                console.error('Error checking book existence in borrow collection:', error);
-                res.status(500).json({ error: 'Internal server error' });
-            }
-        });
-
-
         app.post('/borrow', async (req, res) => {
             const borrow = req.body
             const result = await borrowCollection.insertOne(borrow)
@@ -220,6 +199,8 @@ async function run() {
             const result = await borrowCollection.deleteOne(query)
             res.send(result)
         })
+
+
 
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
