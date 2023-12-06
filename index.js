@@ -17,7 +17,6 @@ app.use((req, res, next) => {
 
 app.use(cors({
     origin: [
-        'https://pytorial.com',
         'https://bookishhaven-fdd6d.web.app',
         'https://bookishhaven-fdd6d.firebaseapp.com',
         'http://localhost:5173'
